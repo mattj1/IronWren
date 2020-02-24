@@ -17,11 +17,11 @@ namespace IronWren
 
         // Also stops CodeMaid from reorganizing the file
 #if DEBUG
-        internal const string WrenLib = "Native/wren-debug";
+        internal const string WrenLib = "Native/wrend.dll";
 #else
-        internal const string WrenLib = "Native/wren";
+        internal const string WrenLib = "Native/wren.dll";
 #endif
-
+            
         private static readonly Dictionary<IntPtr, WeakReference<WrenVM>> vms = new Dictionary<IntPtr, WeakReference<WrenVM>>();
 
         private IntPtr vm;
@@ -104,7 +104,7 @@ namespace IronWren
         /// <returns>The status of the interpretion.</returns>
         public WrenInterpretResult Interpret(string source)
         {
-            return interpret(vm, source);
+            return interpret(vm, InterpetModule, source);
         }
 
         /// <summary>
@@ -487,7 +487,7 @@ namespace IronWren
         #region Native Bindings
 
         [DllImport(WrenLib, EntryPoint = "wrenInterpret", CallingConvention = CallingConvention.Cdecl)]
-        private static extern WrenInterpretResult interpret(IntPtr vm, [MarshalAs(UnmanagedType.LPStr), In]string source);
+        private static extern WrenInterpretResult interpret(IntPtr vm, [MarshalAs(UnmanagedType.LPStr), In]string module, [MarshalAs(UnmanagedType.LPStr), In]string source);
 
         #region Slot Interactions
 

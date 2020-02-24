@@ -211,3 +211,7 @@ GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
 IronWren.VC.opendb
+
+# Jetbrains
+.idea/
+

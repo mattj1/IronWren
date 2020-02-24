@@ -19,8 +19,14 @@ namespace IronWren.ConsoleTesting
         {
             var config = new WrenConfig();
             config.Write += (vm, text) => Console.Write(text);
-            config.Error += (type, module, line, message) => Console.WriteLine($"Error [{type}] in module [{module}] at line {line}:{Environment.NewLine}{message}");
+            config.Error += (vm, type, module, line, message) => Console.WriteLine($"Error [{type}] in module [{module}] at line {line}:{Environment.NewLine}{message}");
+            config.ResolveModule += (vm, importer, name) =>
+            {
+                Console.WriteLine($"ResolveModule: importer: {importer}, name: {name}");
 
+                return "TestModule";
+            };
+            
             config.LoadModule += (vm, module) => $"System.print(\"Module [{module}] loaded!\")";
 
             config.BindForeignMethod += (vm, module, className, isStatic, signature) =>
@@ -29,7 +35,9 @@ namespace IronWren.ConsoleTesting
                 return (signature == "sayHi(_)" ? sayHi : (WrenForeignMethod)null);
             };
 
-            config.BindForeignClass += (vm, module, className) => className == "Test" ? new WrenForeignClassMethods { Allocate = alloc } : null;
+            config.BindForeignClass += (vm, module, className) => className == "Test" ? 
+                new WrenForeignClassMethods { Allocate = alloc } 
+                : null;
 
             using (var vm = new WrenVM(config))
             {
@@ -47,30 +55,32 @@ namespace IronWren.ConsoleTesting
                 vm.GetVariable(WrenVM.InterpetModule, "helloTo", 0);
                 vm.SetSlotString(1, "foreign method");
                 result = vm.Call(someFnHandle);
+                someFnHandle.Dispose();
 
                 result = vm.Interpret("foreign class Test {\n" +
-                    "construct new() { }\n" +
-                    "isForeign { true }\n" +
-                    "foreign sayHi(to)\n" +
-                    "}\n" +
-                    "var test = Test.new()\n" +
-                    "test.sayHi(\"wren\")\n" +
-                    "\n" +
-                    "import \"TestModule\"\n");
+                                      "construct new() { }\n" +
+                                      "isForeign { true }\n" +
+                                      "foreign sayHi(to)\n" +
+                                      "}\n" +
+                                      "var test = Test.new()\n" +
+                                      "test.sayHi(\"wren\")\n" +
+                                      "\n" +
+                                      "import \"TestModule\"\n");
 
+                someFnHandle = vm.MakeCallHandle("isForeign");
                 vm.EnsureSlots(1);
                 vm.GetVariable(WrenVM.InterpetModule, "test", 0);
-                result = vm.Call(vm.MakeCallHandle("isForeign"));
+                result = vm.Call(someFnHandle);
                 var isTestClassForeign = vm.GetSlotBool(0);
-
                 Console.WriteLine("Test class is foreign: " + isTestClassForeign);
-
+                someFnHandle.Dispose();
+                
                 vm.AutoMap(typeof(WrenMath));
                 vm.Interpret("System.print(\"The sine of pi is: %(Math.sin(Math.pi))!\")");
                 Console.WriteLine($"And C# says it's: {Math.Sin(Math.PI)}");
 
                 Console.WriteLine();
-
+                
                 var sw = new Stopwatch();
 
                 for (var i = 0; i < 3; ++i)
@@ -98,12 +108,13 @@ namespace IronWren.ConsoleTesting
                 vm.Interpret("System.print(\"Vector's X is: %(vec.x)\")");
                 vm.Interpret("System.print(\"Vector's Y is: %(vec.y)\")");
 
+                Console.WriteLine("Press return to continue...");
                 Console.ReadLine();
                 Console.Clear();
                 Console.WriteLine("You may now write Wren code that will be interpreted!");
                 Console.WriteLine("Use file:[path] to interpret a file!");
                 Console.WriteLine();
-
+/*
                 while (true)
                 {
                     var input = Console.ReadLine();
@@ -113,6 +124,7 @@ namespace IronWren.ConsoleTesting
                     else
                         vm.Interpret(input);
                 }
+                */
             }
         }
 

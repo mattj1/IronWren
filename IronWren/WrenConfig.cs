@@ -51,6 +51,8 @@ namespace IronWren
         /// </summary>
         public WrenLoadModule LoadModule { get; set; }
 
+        public WrenResolveModule ResolveModule { get; set; }
+        
         /// <summary>
         /// The callback Wren uses to find a foreign method and bind it to a class.
         /// <para/>
@@ -178,6 +180,9 @@ namespace IronWren
             public WrenReallocate Reallocate;
 
             [MarshalAs(UnmanagedType.FunctionPtr)]
+            public WrenResolveModuleInternal ResolveModule;
+            
+            [MarshalAs(UnmanagedType.FunctionPtr)]
             public WrenLoadModuleInternal LoadModule;
 
             [MarshalAs(UnmanagedType.FunctionPtr)]
@@ -190,13 +195,15 @@ namespace IronWren
             public WrenWriteInternal Write;
 
             [MarshalAs(UnmanagedType.FunctionPtr)]
-            public WrenError Error;
+            public WrenErrorInternal Error;
 
             public uint InitialHeapSize;
 
             public uint MinHeapSize;
 
             public int HeapGrowthPercent;
+
+            public IntPtr userData;
         }
 
         /// <summary>
@@ -207,6 +214,7 @@ namespace IronWren
             initConfiguration(out config);
 
             config.LoadModule = loadModule;
+            config.ResolveModule = resolveModule;
             config.BindForeignMethod = bindForeignMethod;
             config.BindForeignClass = bindForeignClass;
             config.Write = write;
@@ -232,6 +240,13 @@ namespace IronWren
             return resultPtr;
         }
 
+        private IntPtr resolveModule(IntPtr vm, string importer, string name)
+        {
+            string str = ResolveModule(WrenVM.GetVM(vm), importer, name);
+
+            return Marshal.StringToCoTaskMemAnsi(str);
+        }
+        
         private static List<WrenForeignMethodInternal> wrappedResults = new List<WrenForeignMethodInternal>();
 
         private WrenForeignMethodInternal bindForeignMethod(IntPtr vm, string module, string className, bool isStatic, string signature)
@@ -283,12 +298,12 @@ namespace IronWren
             Write(WrenVM.GetVM(vm), text);
         }
 
-        private void error(WrenErrorType type, string module, int line, string message)
+        private void error(IntPtr vm, WrenErrorType type, string module, int line, string message)
         {
             if (Error == null)
                 return;
 
-            Error(type, module, line, message);
+            Error(WrenVM.GetVM(vm), type, module, line, message);
         }
 
         [DllImport(WrenVM.WrenLib, EntryPoint = "wrenInitConfiguration", CallingConvention = CallingConvention.Cdecl)]

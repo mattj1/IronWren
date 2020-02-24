@@ -120,11 +120,14 @@ namespace IronWren.AutoMapper
         {
             Dictionary<string, ForeignClass> classes;
             if (module == WrenVM.InterpetModule && mainModuleClasses.TryGetValue(vm, out classes))
-                return classes?[className]?.Bind();
+                if (classes.ContainsKey(className))
+                    return classes?[className]?.Bind();
 
             Dictionary<string, ForeignModule> modules;
             if (generatedModules.TryGetValue(vm, out modules))
-                return modules?[module]?.Classes?[className]?.Bind();
+                if (modules.ContainsKey(module))
+                    if ((modules?[module]?.Classes).ContainsKey(className))
+                        return modules?[module]?.Classes?[className]?.Bind();
 
             return null;
         }

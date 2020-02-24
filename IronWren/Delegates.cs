@@ -127,12 +127,20 @@ namespace IronWren
     /// <param name="module">The name of the module that the error occured in.</param>
     /// <param name="line">The line number of the error. Negative (-1) if not applicable.</param>
     /// <param name="message">The error's message.</param>
+
+    public delegate void WrenError(WrenVM vm, WrenErrorType type, string module, int line, string message);
+    
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    public delegate void WrenError(WrenErrorType type, [MarshalAs(UnmanagedType.LPStr)]string module, int line, [MarshalAs(UnmanagedType.LPStr)]string message);
+    internal delegate void WrenErrorInternal(IntPtr vm, WrenErrorType type, [MarshalAs(UnmanagedType.LPStr)]string module, int line, [MarshalAs(UnmanagedType.LPStr)]string message);
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
     internal delegate IntPtr WrenReallocate(IntPtr memory, uint size);
 
+    public delegate string WrenResolveModule(WrenVM vm, string importer, string name);
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    internal delegate IntPtr WrenResolveModuleInternal(IntPtr vm, [MarshalAs(UnmanagedType.LPStr)]string importer,  [MarshalAs(UnmanagedType.LPStr)]string name);
+    
     #region WrenWrite
 
     /// <summary>
